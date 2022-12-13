@@ -5,13 +5,21 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
 import android.util.Log;
+import android.widget.RadioGroup;
+import android.widget.Toast;
+
+import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,17 +37,38 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        verifyStoragePermissions(this);
+        grantAccessToAllStorage();
 
-        MyInternetAsyncTask task = new MyInternetAsyncTask();
-        try {
-            binding.imageView.setImageBitmap(
-                task
-                    .execute("https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg") // Запускает AsyncTask
-                    .get() // возвращает результат выполнения AsyncTask
-            );
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        binding.rg.setOnCheckedChangeListener(
+            new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+                if (binding.rb1.getId() == i) {
+                    try {
+                        Bitmap result = new MyTask().execute().get();
+                        binding.imageView.setImageBitmap(result);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else if (binding.rb2.getId() == i) {
+                    try {
+                        Bitmap result = new MyInternetAsyncTask()
+                            .execute("https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg")
+                            .get();
+                        binding.imageView.setImageBitmap(result);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    Picasso
+                        .get()
+                        .load("https://icatcare.org/app/uploads/2018/07/Thinking-of-getting-a-cat.png")
+                        .into(binding.imageView);
+                }
+
+            }
+        });
     }
 
     private class MyTask extends AsyncTask<Void, Void, Bitmap> {
@@ -78,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
                     Environment
                         .getExternalStorageDirectory()
                         .getAbsoluteFile(),
-                    "downloaded"
+                    "downloaded.png"
                 );
                 if (!file.isFile())
                     file.createNewFile();
@@ -92,6 +121,40 @@ public class MainActivity extends AppCompatActivity {
                 return bitmap;
             }
             return bitmap;
+        }
+    }
+
+    private static final String[] PERMISSIONS = {
+        Manifest.permission.READ_EXTERNAL_STORAGE,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        Manifest.permission.MANAGE_EXTERNAL_STORAGE
+    };
+
+    public void grantAccessToAllStorage() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                Intent intent = new Intent();
+                intent.setAction(
+                    Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION
+                );
+                Uri uri = Uri.fromParts("package", this.getPackageName(), null);
+                intent.setData(uri);
+                startActivity(intent);
+            }
+        }
+    }
+
+    public static void verifyStoragePermissions(Activity activity) {
+        int grantedPermission = ActivityCompat
+            .checkSelfPermission(activity,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if (grantedPermission != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                activity,
+                PERMISSIONS,
+                1 // Ваш ID для запроса permissions и различения их между собой
+            );
         }
     }
 }
