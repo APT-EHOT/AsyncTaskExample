@@ -37,11 +37,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
         verifyStoragePermissions(this);
         grantAccessToAllStorage();
 
-        binding.rg.setOnCheckedChangeListener(
-            new RadioGroup.OnCheckedChangeListener() {
+        // Обработка нажатий на RadioButton
+        binding.rg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup radioGroup, int i) {
                 if (binding.rb1.getId() == i) {
@@ -61,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 } else {
+                    // Использование пикассо для загрузки изображений
                     Picasso
                         .get()
                         .load("https://icatcare.org/app/uploads/2018/07/Thinking-of-getting-a-cat.png")
@@ -71,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Загрузка картинки из локальной памяти
     private class MyTask extends AsyncTask<Void, Void, Bitmap> {
 
         @Override
@@ -93,8 +96,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class MyInternetAsyncTask
-        extends AsyncTask<String, Void, Bitmap> {
+    // Загрузка картинки из интернета и сохранение ее в память
+    private class MyInternetAsyncTask extends AsyncTask<String, Void, Bitmap> {
 
         @Override
         protected Bitmap doInBackground(String... strings) {
@@ -130,6 +133,7 @@ public class MainActivity extends AppCompatActivity {
         Manifest.permission.MANAGE_EXTERNAL_STORAGE
     };
 
+    // Выдача разрешения на доступ ко всей памяти устройства через настройки (Android 11+)
     public void grantAccessToAllStorage() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
@@ -144,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Вызов диалогового окна для выдачи пермишна на память
     public static void verifyStoragePermissions(Activity activity) {
         int grantedPermission = ActivityCompat
             .checkSelfPermission(activity,
